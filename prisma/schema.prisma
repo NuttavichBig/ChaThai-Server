@@ -1,0 +1,101 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int            @id @default(autoincrement())
+  username     String         @unique @db.VarChar(50)
+  password     String
+  email        String         @unique
+  displayName  String?         @map("display_name") @db.VarChar(30)
+  profileImage String?        @map("profile_image")
+  role         UserRole       @default(GUEST)
+  status       UserStatus     @default(ACTIVE)
+  collections  Collection[]
+  favorites    Favorite[]
+  inRoomPlayers InRoomPlayer[]
+}
+
+enum UserRole {
+  GUEST
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  BANNED
+}
+
+model Collection {
+  id          Int        @id @default(autoincrement())
+  title       String     @db.VarChar(50)
+  description String?
+  coverImage  String?    @map("cover_image")
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt   DateTime   @updatedAt @map("updated_at") @db.Timestamp(0)
+  authorId    Int        @map("author_id") // fk
+  author      User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  words       Word[]
+  favorited   Favorite[]
+  rooms       room[]
+}
+
+model Word {
+  id           Int        @id @default(autoincrement())
+  word         String     @db.VarChar(100)
+  collectionId Int        @map("collection_id") //fk
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+}
+
+model Favorite {
+  id           Int        @id @default(autoincrement())
+  collectionId Int        @map("collection_id") //fk
+  userId       Int        @map("user_id") //fk
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model room {
+  id           Int            @id @default(autoincrement())
+  collectionId Int            @map("colleciton_id") //fk
+  code         String         @db.VarChar(6)
+  status       RoomStatus     @default(WAITING)
+  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamp(0)
+  collection   Collection     @relation(fields: [collectionId], references: [id])
+  inRoomPlayers InRoomPlayer[]
+}
+
+enum RoomStatus {
+  WAITING
+  PLAYING
+  HOLDING
+}
+
+model InRoomPlayer {
+  id         Int        @id @default(autoincrement())
+  userId     Int        @map("user_id") //fk
+  roomId     Int        @map("room_id") //fk
+  playerRole PlayerRole @default(HINT) @map("player_role")
+  isMaster   Boolean    @default(false) @map("is_master")
+  isReady    Boolean    @default(false) @map("is_ready")
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  room       room       @relation(fields: [roomId], references: [id], onDelete: Cascade)
+}
+
+enum PlayerRole {
+  GUESS
+  HINT
+}
