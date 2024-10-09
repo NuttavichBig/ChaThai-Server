@@ -98,13 +98,17 @@ module.exports.update = async(req,res,next) =>{
                 cloudinary.uploader.destroy(getPublicId(req.user.profileImage))
             }
         }
+
+        // make data
         const data = havefile?
         {...req.input,profileImage : uploadResult.secure_url}
         :{...req.input}
-        const rs = await prisma.user.update({
+
+        // update and response
+        const result = await prisma.user.update({
             where :{ id : req.user.id},data
         })
-        res.json(rs)
+        res.json(result)
     }catch(err){
         next(err)
     }
@@ -113,6 +117,8 @@ module.exports.update = async(req,res,next) =>{
 
 module.exports.getRole = async(req,res,next) =>{
     try{
+
+        // find user
         const id = req.user.id;
         const user = await prisma.user.findUnique({
             where : {
@@ -121,6 +127,8 @@ module.exports.getRole = async(req,res,next) =>{
                 role : true
             }
         })
+
+        // response
         res.json({role : user.role})
     }catch(err){
         next(err);
