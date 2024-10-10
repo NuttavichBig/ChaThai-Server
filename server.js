@@ -4,10 +4,14 @@ const cors = require("cors");
 const socketIo = require("socket.io");
 const {createServer}= require("node:http");
 const handleError = require("./src/middlewares/error");
+const adminCheck = require("./src/middlewares/adminCheck");
+const authenticate =require("./src/middlewares/authenticate")
 
 //Import Route
-const authRoute = require("./src/routes/auth-route")
-const collectionRoute = require("./src/routes/collection-route")
+const authRoute = require("./src/routes/auth-route");
+const collectionRoute = require("./src/routes/collection-route");
+const gameRoute = require("./src/routes/game-route");
+const adminRoute = require("./src/routes/admin-route");
 
 
 // Config Section
@@ -27,8 +31,8 @@ app.use(express.json())
 // HTTP Request, Response
 app.use('/auth',authRoute)
 app.use('/collection',collectionRoute)
-app.use('/game',()=>{})
-app.use('/admin',()=>{})
+app.use('/game',gameRoute)
+app.use('/admin',authenticate,adminCheck,adminRoute)
 
 
 

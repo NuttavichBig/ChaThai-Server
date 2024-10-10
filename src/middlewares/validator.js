@@ -91,7 +91,7 @@ const updateSchema = Joi.object({
         .email({ tlds: false })
         .optional()
         .messages({
-            "string.empty": "Email is required.",
+            "string.empty": "Email can't be null.",
             "string.base": "Email must be a string.",
             "string.email": "Email must be valid."
         }),
@@ -175,6 +175,43 @@ const createCollectionSchema = Joi.object({
         })
 })
 
+const updateCollectionSchema = Joi.object({
+    title: Joi
+        .string()
+        .max(50)
+        .optional()
+        .messages({
+            "string.base": "Title must be a string.",
+            "string.empty": "Title is required.",
+            "string.max": "Title cannot be longer than 50 characters."
+        }),
+    description: Joi
+        .string()
+        .optional()
+        .allow(null, '')
+        .messages({
+            "string.base": "Description must be a string."
+        }),
+    words: Joi
+        .array()
+        .items(Joi
+            .string()
+            .max(100)
+            .required()
+            .messages({
+                "string.base": "All word must be a string.",
+                "string.empty": "All words are required.",
+                "string.max": "All words cannot be longer than 100 characters."
+            }))
+        .min(10)
+        .optional()
+        .messages({
+            "array.base" : "Words must be an array",
+            "array.empty" : "Words are required",
+            "array.min" : "Words array cannot be shorter than 10 items",
+        })
+})
+
 //validate function
 const validateSchema = (schema) => (req, res, next) => {
     const { value, error } = schema.validate(req.body)
@@ -202,3 +239,4 @@ module.exports.loginValidator = validateSchema(loginSchema)
 module.exports.updateValidator = validateSchema(updateSchema)
 module.exports.getCollectionValidator = validateQuery(getCollectionSchema)
 module.exports.createCollectionValidator = validateSchema(createCollectionSchema)
+module.exports.updateCollectionValidator = validateSchema(updateCollectionSchema)

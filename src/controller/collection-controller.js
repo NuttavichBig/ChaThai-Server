@@ -3,7 +3,7 @@ const createError = require("../utility/create-error")
 const cloudinary =require("../config/cloudinary")
 const fs =require("fs/promises")
 const getPublicId =require("../utility/getPublicId")
-const { type } = require("os")
+
 
 
 module.exports.getCollection = async(req,res,next)=>{
@@ -90,10 +90,84 @@ module.exports.createCollection = async(req,res,next)=>{
     }
 }
 
-module.exports.updateCollection = (req,res,next)=>{
+module.exports.updateCollection = async(req,res,next)=>{
     try{
-        const {id} = req.params
-        res.json('update collection path with id : '+id)
+       // Get data from request
+       const {id} = req.params
+       const {title, description, words} = req.input
+       const havefile = !!req.file
+
+
+        // Check collection exist
+        const collection = await prisma.collection.findUnique({
+            where : {
+                id : +id
+            }
+        })
+        if(!collection)return createError(400,"Collection not found")
+        
+        // Check user permission
+        if(req.user.role!== 'ADMIN'){
+            if(req.user.id !== collection.authorId ){
+                return createError(400,"You don't have permission")
+            }
+        }
+
+         // make data
+         let data = {}
+
+         // check input
+         if(title){
+            data = {...data,title : title}
+         }
+
+         if(description || description === null || description === ''){
+            data = {...data, description : description}
+         }
+
+         // check words
+         if(words){
+            const wordsArray = words.map(el=>({word: el}))
+            data = {...data ,  words : {
+                create : wordsArray,
+            }}
+            const delWords = await prisma.word.deleteMany({
+                where :{
+                    collectionId : +id
+                }
+            })
+            console.log("Delete : "+delWords)
+         }
+
+         // file handle
+         let uploadResult = {}
+        if(havefile){
+            uploadResult = await cloudinary.uploader.upload(req.file.path,{
+                public_id : req.file.filename.split(".")[0]
+            })
+            fs.unlink(req.file.path)
+            data = {...data,coverImage : uploadResult.secure_url}
+            if(collection.coverImage){
+                cloudinary.uploader.destroy(getPublicId(collection.coverImage))
+            }
+        }
+
+        // create data
+        const result = await prisma.collection.update({
+            where : {
+                id : +id
+            },
+            data,
+            include : {
+                words : {
+                    select : {
+                        id : true,
+                        word : true
+                    }
+                }
+            }
+        })
+        res.json(result)       
     }catch(err){
         next(err);
     }
@@ -115,7 +189,7 @@ module.exports.deleteCollection = async(req,res,next)=>{
         
         // Check user permission
         if(user.role !== 'ADMIN'){
-            if(user.id !== collection.userId ){
+            if(user.id !== collection.authorId){
                 return createError(400,"You don't have permission")
             }
         }
