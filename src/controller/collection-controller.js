@@ -9,13 +9,13 @@ const getPublicId =require("../utility/getPublicId")
 module.exports.getCollection = async(req,res,next)=>{
     try{
         // Obj Deconstruction
-        const {limit,page,order,author} = req.input
+        const {limit,page,order,author,sortBy} = req.input
 
 
         // create condition
         let condition = {
             orderBy: {
-                updatedAt : order
+                [sortBy] : order
             },
             skip : (page-1)*limit,
             take : limit,

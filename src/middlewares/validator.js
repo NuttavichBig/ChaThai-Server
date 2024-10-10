@@ -136,6 +136,13 @@ const getCollectionSchema = Joi.object({
         .messages({
             "any.only": "Order must be either 'asc' or 'desc'."
         }),
+    sortBy: Joi
+        .string()
+        .valid('id', 'title', 'authorId', 'createdAt', 'updatedAt')
+        .default('id')
+        .messages({
+            'any.only': 'sortBy must be one of id, username, role, status, createdAt, updatedAt',
+        }),
 });
 
 const createCollectionSchema = Joi.object({
@@ -169,9 +176,9 @@ const createCollectionSchema = Joi.object({
         .min(10)
         .required()
         .messages({
-            "array.base" : "Words must be an array",
-            "array.empty" : "Words are required",
-            "array.min" : "Words array cannot be shorter than 10 items",
+            "array.base": "Words must be an array",
+            "array.empty": "Words are required",
+            "array.min": "Words array cannot be shorter than 10 items",
         })
 })
 
@@ -206,10 +213,82 @@ const updateCollectionSchema = Joi.object({
         .min(10)
         .optional()
         .messages({
-            "array.base" : "Words must be an array",
-            "array.empty" : "Words are required",
-            "array.min" : "Words array cannot be shorter than 10 items",
+            "array.base": "Words must be an array",
+            "array.empty": "Words are required",
+            "array.min": "Words array cannot be shorter than 10 items",
         })
+})
+
+const getUserQuerySchema = Joi.object({
+    order: Joi
+        .string()
+        .valid('asc', 'desc')
+        .default('asc')
+        .messages({
+            'any.only': 'Order must be either asc or desc',
+        }),
+    sortBy: Joi
+        .string()
+        .valid('id', 'username', 'role', 'status', 'createdAt', 'updatedAt')
+        .default('id')
+        .messages({
+            'any.only': 'sortBy must be one of id, username, role, status, createdAt, updatedAt',
+        }),
+    limit: Joi
+        .number()
+        .integer()
+        .min(1)
+        .default(10)
+        .messages({
+            'number.base': 'Limit must be a number',
+            'number.min': 'Limit must be greater than or equal to 1',
+        }),
+    page: Joi
+        .number()
+        .integer()
+        .min(1)
+        .default(1)
+        .messages({
+            'number.base': 'Page must be a number',
+            'number.min': 'Page must be greater than or equal to 1',
+        }),
+    search: Joi
+        .string()
+        .allow('')
+        .optional()
+        .messages({
+            'string.base': 'Search must be a string',
+        }),
+})
+
+const updateUserSchema = Joi.object({
+    password: Joi
+    .string()
+    .min(6)
+    .max(30)
+    .optional()
+    .messages({
+        "string.empty": "Password is required.",
+        "string.base": "Password must be a string.",
+        "string.min": "Password should have length between 6 to 30 characters.",
+        "string.max": "Password should have length between 6 to 30 characters."
+    }),
+    email: Joi
+        .string()
+        .email({ tlds: false })
+        .optional()
+        .messages({
+            "string.empty": "Email can't be null.",
+            "string.base": "Email must be a string.",
+            "string.email": "Email must be valid."
+        }),
+    status: Joi
+        .string()
+        .valid('ACTIVE','INACTIVE','BANNED')
+        .optional()
+        .messages({
+            'any.only': 'sortBy must be one of id, username, role, status, createdAt, updatedAt',
+        }),
 })
 
 //validate function
@@ -240,3 +319,5 @@ module.exports.updateValidator = validateSchema(updateSchema)
 module.exports.getCollectionValidator = validateQuery(getCollectionSchema)
 module.exports.createCollectionValidator = validateSchema(createCollectionSchema)
 module.exports.updateCollectionValidator = validateSchema(updateCollectionSchema)
+module.exports.getUserValidator = validateQuery(getUserQuerySchema)
+module.exports.updateUserValidator = validateSchema(updateUserSchema)

@@ -80,19 +80,20 @@ module.exports.login = async(req,res,next) =>{
 module.exports.update = async(req,res,next) =>{
     try{
         // get data from request
-        console.log(req.input)
         const {displayName , email} = req.input
-        const havefile = !!req.file
+        const haveFile = !!req.file
 
         // check (can't be empty in a same time)
-        if(!havefile && !displayName && !email)return createError(400,"Must have 1 data field at least")
+        if(!haveFile && !displayName && !email)return createError(400,"Must have 1 data field at least")
 
         // file handle
         let uploadResult = {}
-        if(havefile){
+        if(haveFile){
+            console.log(req.file.path)
             uploadResult = await cloudinary.uploader.upload(req.file.path,{
                 public_id : req.file.filename.split(".")[0]
             })
+
             fs.unlink(req.file.path)
             if(req.user.profileImage){
                 cloudinary.uploader.destroy(getPublicId(req.user.profileImage))
@@ -100,7 +101,7 @@ module.exports.update = async(req,res,next) =>{
         }
 
         // make data
-        const data = havefile?
+        const data = haveFile?
         {...req.input,profileImage : uploadResult.secure_url}
         :{...req.input}
 

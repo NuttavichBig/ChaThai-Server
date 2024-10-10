@@ -22,6 +22,8 @@ model User {
   profileImage String?        @map("profile_image")
   role         UserRole       @default(GUEST)
   status       UserStatus     @default(ACTIVE)
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt   DateTime   @updatedAt @map("updated_at") @db.Timestamp(0)
   collections  Collection[]
   favorites    Favorite[]
   inRoomPlayers InRoomPlayer[]
