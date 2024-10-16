@@ -31,7 +31,7 @@ app.use(express.json())
 // HTTP Request, Response
 app.use('/auth',authRoute)
 app.use('/collection',collectionRoute)
-app.use('/game',gameRoute)
+app.use('/game',authenticate,gameRoute)
 app.use('/admin',authenticate,adminCheck,adminRoute)
 
 

@@ -9,7 +9,7 @@ const upload =require("../middlewares/upload")
 router.post('/register',registerValidator,authController.register)
 router.post('/login',loginValidator,authController.login)
 router.patch('/update',authenticate,upload.single('profileImage'),updateValidator,authController.update)
-router.get('/getRole',authenticate,authController.getRole)
+router.get('/getMe',authenticate,authController.getMe)
 
 
 module.exports = router

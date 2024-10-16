@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken")
 const cloudinary =require("../config/cloudinary")
 const fs =require("fs/promises")
 const getPublicId =require("../utility/getPublicId")
+const { not } = require("joi")
 
 module.exports.register = async(req,res,next) =>{
     try{
@@ -84,7 +85,21 @@ module.exports.update = async(req,res,next) =>{
         const haveFile = !!req.file
 
         // check (can't be empty in a same time)
-        if(!haveFile && !displayName && !email)return createError(400,"Must have 1 data field at least")
+        if(!haveFile && (!displayName && displayName !== '') && !email)return createError(400,"Must have 1 data field at least")
+
+
+        // Check Email /Unique
+        if(email){
+            const emailExist = await prisma.user.findUnique({
+                where : {
+                    AND : [
+                       { email : email },
+                       { id : { not : req.user.id}}
+                    ]
+                }
+            })
+            if(emailExist) return createError(400,"Your email already exist")
+        }
 
         // file handle
         let uploadResult = {}
@@ -109,14 +124,15 @@ module.exports.update = async(req,res,next) =>{
         const result = await prisma.user.update({
             where :{ id : req.user.id},data
         })
-        res.json(result)
+        const {password,role,status,...userData} =result
+        res.json(userData)
     }catch(err){
         next(err)
     }
 }
 
 
-module.exports.getRole = async(req,res,next) =>{
+module.exports.getMe = async(req,res,next) =>{
     try{
 
         // find user
@@ -124,13 +140,16 @@ module.exports.getRole = async(req,res,next) =>{
         const user = await prisma.user.findUnique({
             where : {
                 id
-            },select : {
-                role : true
+            },select:{
+                id: true,
+                username : true,
+                email :true,
+                role : true,
             }
         })
 
         // response
-        res.json({role : user.role})
+        res.json(user)
     }catch(err){
         next(err);
     }

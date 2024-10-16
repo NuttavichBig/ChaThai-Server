@@ -81,6 +81,7 @@ const updateSchema = Joi.object({
     displayName: Joi
         .string()
         .max(30)
+        .allow('', null)
         .optional()
         .messages({
             "string.base": "Display name must be a string.",
@@ -107,7 +108,7 @@ const getCollectionSchema = Joi.object({
         .number()
         .integer()
         .min(1)
-        .default(10)
+        .default(12)
         .messages({
             "number.base": "Limit must be a number.",
             "number.min": "Limit must be greater than 0.",
@@ -143,6 +144,13 @@ const getCollectionSchema = Joi.object({
         .messages({
             'any.only': 'sortBy must be one of id, username, role, status, createdAt, updatedAt',
         }),
+    role: Joi
+        .string()
+        .valid('ADMIN', 'USER')
+        .optional()
+        .messages({
+            'any.only': 'Role must be ADMIN or USER',
+        })
 });
 
 const createCollectionSchema = Joi.object({
@@ -216,6 +224,12 @@ const updateCollectionSchema = Joi.object({
             "array.base": "Words must be an array",
             "array.empty": "Words are required",
             "array.min": "Words array cannot be shorter than 10 items",
+        }),
+    deleteImage: Joi
+        .boolean()
+        .optional()
+        .messages({
+            "boolean.base": "deleteImage must be boolean"
         })
 })
 
@@ -263,16 +277,16 @@ const getUserQuerySchema = Joi.object({
 
 const updateUserSchema = Joi.object({
     password: Joi
-    .string()
-    .min(6)
-    .max(30)
-    .optional()
-    .messages({
-        "string.empty": "Password is required.",
-        "string.base": "Password must be a string.",
-        "string.min": "Password should have length between 6 to 30 characters.",
-        "string.max": "Password should have length between 6 to 30 characters."
-    }),
+        .string()
+        .min(6)
+        .max(30)
+        .optional()
+        .messages({
+            "string.empty": "Password is required.",
+            "string.base": "Password must be a string.",
+            "string.min": "Password should have length between 6 to 30 characters.",
+            "string.max": "Password should have length between 6 to 30 characters."
+        }),
     email: Joi
         .string()
         .email({ tlds: false })
@@ -284,11 +298,16 @@ const updateUserSchema = Joi.object({
         }),
     status: Joi
         .string()
-        .valid('ACTIVE','INACTIVE','BANNED')
+        .valid('ACTIVE', 'INACTIVE', 'BANNED')
         .optional()
         .messages({
             'any.only': 'sortBy must be one of id, username, role, status, createdAt, updatedAt',
         }),
+})
+
+
+const createGameSchema = Joi.object({
+    
 })
 
 //validate function
