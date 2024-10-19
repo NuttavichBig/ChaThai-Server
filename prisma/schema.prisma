@@ -73,7 +73,7 @@ model Favorite {
 model room {
   id           Int            @id @default(autoincrement())
   collectionId Int            @map("colleciton_id") //fk
-  code         String         @db.VarChar(6)
+  code         String         @db.VarChar(6) @unique
   status       RoomStatus     @default(WAITING)
   createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamp(0)
   collection   Collection     @relation(fields: [collectionId], references: [id])
@@ -88,13 +88,13 @@ enum RoomStatus {
 
 model InRoomPlayer {
   id         Int        @id @default(autoincrement())
-  userId     Int        @map("user_id") //fk
+  userId     Int        @map("user_id") @unique //fk
   roomId     Int        @map("room_id") //fk
   playerRole PlayerRole @default(HINT) @map("player_role")
   isMaster   Boolean    @default(false) @map("is_master")
   isReady    Boolean    @default(false) @map("is_ready")
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  room       room       @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  users       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rooms      room       @relation(fields: [roomId], references: [id], onDelete: Cascade)
 }
 
 enum PlayerRole {

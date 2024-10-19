@@ -3,6 +3,7 @@ const createError = require("../utility/create-error")
 const cloudinary = require("../config/cloudinary")
 const fs = require("fs/promises")
 const getPublicId = require("../utility/getPublicId")
+const findCollectionById = require("../services/findCollectionById")
 
 
 
@@ -23,11 +24,11 @@ module.exports.getCollection = async (req, res, next) => {
             },
             skip: (page - 1) * limit,
             take: limit,
-            select : {
-                id : true,
-                title : true,
-                coverImage : true,
-                authorId : true
+            select: {
+                id: true,
+                title: true,
+                coverImage: true,
+                authorId: true
             }
         }
         if (author) {
@@ -70,10 +71,10 @@ module.exports.getCollectionDetail = async (req, res, next) => {
                         word: true
                     }
                 },
-                author : {
-                    select : {
-                        id : true,
-                        username : true
+                author: {
+                    select: {
+                        id: true,
+                        username: true
                     }
                 }
             }
@@ -82,7 +83,7 @@ module.exports.getCollectionDetail = async (req, res, next) => {
             return createError(400, "Collection does not exist")
         }
 
-        const {authorId , ...lastResponse} = collection
+        const { authorId, ...lastResponse } = collection
         res.json(lastResponse)
     } catch (err) {
         next(err);
@@ -145,22 +146,12 @@ module.exports.updateCollection = async (req, res, next) => {
     try {
         // Get data from request
         const { id } = req.params
-        const { title, description, words,deleteImage } = req.input
+        const { title, description, words, deleteImage } = req.input
         const havefile = !!req.file
-        console.log(deleteImage)
-        //validate Params
-        if (isNaN(+id) || Math.trunc(+id) !== +id) {
-            return createError(400, "Parameter should be integer")
-        }
 
+        // collection service
+        const collection = await findCollectionById(id)
 
-        // Check collection exist
-        const collection = await prisma.collection.findUnique({
-            where: {
-                id: +id
-            }
-        })
-        if (!collection) return createError(400, "Collection not found")
 
         // Check user permission
         if (req.user.role !== 'ADMIN') {
@@ -198,7 +189,7 @@ module.exports.updateCollection = async (req, res, next) => {
         }
 
         // handle delete cover image
-        if(deleteImage){
+        if (deleteImage) {
             cloudinary.uploader.destroy(getPublicId(collection.coverImage))
             data.coverImage = null
         }
@@ -244,18 +235,8 @@ module.exports.deleteCollection = async (req, res, next) => {
         const { id } = req.params
         const user = req.user
 
-        //validate Params
-        if (isNaN(+id) || Math.trunc(+id) !== +id) {
-            return createError(400, "Parameter should be integer")
-        }
-
-        // Check collection exist
-        const collection = await prisma.collection.findUnique({
-            where: {
-                id: +id
-            }
-        })
-        if (!collection) return createError(400, "Collection not found")
+        // collection service
+        const collection = await findCollectionById(id)
 
         // Check user permission
         if (user.role !== 'ADMIN') {

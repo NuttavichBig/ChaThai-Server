@@ -12,6 +12,8 @@ const authRoute = require("./src/routes/auth-route");
 const collectionRoute = require("./src/routes/collection-route");
 const gameRoute = require("./src/routes/game-route");
 const adminRoute = require("./src/routes/admin-route");
+const socketAuthen = require("./src/middlewares/socket/socketAuthen");
+const roomController = require("./src/controller/socket/room-controller");
 
 
 // Config Section
@@ -42,22 +44,30 @@ app.use(handleError)
 
 
 
+// Socket middle ware
+io.use(socketAuthen)
 
 // Web socket
 io.on('connection',(socket)=>{
-    //Connection check
+    // Connection check
     console.log('User has connected')
-    console.log(socket)
+
+    // Controller
+    socket.on('joinRoom',(arg)=>roomController(io,socket,arg))
+    // roomController(io,socket)
 
 
-
-    //Disconnection check
+    // Disconnection check
     socket.on('disconnect',()=>{
         console.log("User has disconnected")
     })
 })
 
 
+// Global socket error handle
+// io.on('error',err=>{
+//     console.log('Global Socket.IO error :',err)
+// })
 
 
 //Server Listen

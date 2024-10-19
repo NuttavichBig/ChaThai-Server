@@ -30,7 +30,7 @@ module.exports = async (req, res, next) => {
         if (!findUser) {
             return createError(401, "Unauthorized")
         }
-        if(findUser.status === 'BANNED' || findUser.status === 'INACTIVE')return createError(4001,"Unauthorized")
+        if(findUser.status === 'BANNED' || findUser.status === 'INACTIVE')return createError(401,"Unauthorized")
 
 
 

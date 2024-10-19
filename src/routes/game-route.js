@@ -4,7 +4,7 @@ const gameController = require('../controller/game-controller')
 const authenticate = require("../middlewares/authenticate")
 
 
-router.post('/',gameController.createGame)
+router.post('/',gameController.createGame),
 
 
 
