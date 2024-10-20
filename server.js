@@ -59,6 +59,7 @@ io.on('connection',(socket)=>{
 
     // Disconnection check
     socket.on('disconnect',()=>{
+        socket.removeAllListeners();
         console.log("User has disconnected")
     })
 })

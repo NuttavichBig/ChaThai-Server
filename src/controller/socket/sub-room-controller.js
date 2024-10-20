@@ -5,7 +5,6 @@ const gameService = require("../../services/game-service")
 
 module.exports.leaveRoom = async (io,userId, roomId) => {
     try {
-
         console.log('User has leave a room')
         // delete user from room
         await prisma.inRoomPlayer.delete({
@@ -16,7 +15,7 @@ module.exports.leaveRoom = async (io,userId, roomId) => {
 
         // if last user delete room
         const member = await gameService.findMember(roomId)
-        if (!member) {
+        if (member.length === 0) {
             console.log('no user left')
             const delRoom = await prisma.room.delete({
                 where: {
