@@ -6,42 +6,80 @@ const subRoomController = require("./sub-room-controller")
 
 module.exports = async (io, socket, arg) => {
     try {
+
         const { code } = arg
         const isInRoom = await gameService.checkUserInRoom(socket.user.id)
         if (isInRoom) return createError(400, "You already in room")
 
         // check room
         const room = await gameService.checkGameRoomByCode(code)
-        if (!room) return createError(404, "Room not found")
-        if (room.status === 'PLAYING' || room.status === 'HOLDING') return createError(409, "Game room is full or now playing")
+        if (!room) {
+            // console.log('Room not found')
+            // socket.emit("error", "Room not found")
+            return createError(400,"Room not found")
+        }
+
+        if (room.status === 'PLAYING') return createError(409, "Game room is full or now playing")
 
         // find member of this room
         const member = await gameService.findMember(room.id)
-        console.log(member)
 
-        // check is Master
+        // check is First member
         let isMaster = false;
-        if(member.length === 0)isMaster = true;
+        let playerRole = 'HINT'
+        if(member.length === 0){
+            isMaster = true;
+            playerRole = 'GUESS'
+            const data = await prisma.room.update({
+                where : {
+                    id : room.id
+                },data : {
+                    status : 'WAITING'
+                }
+            })
+            console.log('change room status to waiting',data)
+        }
 
 
         // join
-        await prisma.inRoomPlayer.create({
+        const newMember = await prisma.inRoomPlayer.create({
             data: {
                 userId: socket.user.id,
                 roomId: room.id,
-                isMaster: isMaster
+                isMaster,
+                playerRole
+            },include :{
+                users: {
+                    select : {
+                        id : true,
+                        username : true,
+                        displayName : true,
+                        profileImage : true
+                    }
+                }
             }
         })
+        member.push(newMember)
         // initial join room
         socket.join(room.id)
-
+        
 
         // client emit
         socket.emit('joinComplete', { message: 'You has join successfully', room: room, member: member })
 
         // other client emit
-        io.to(room.id).emit('userJoined', { message: `user ${socket.user.username} has join room ${room.id} code ${room.code}`, user: { id: socket.user.id, username: socket.user.username } })
+        io.to(room.id).emit('userJoined', { message: `user ${socket.user.username} has join room`, member})
 
+
+        //listener remover
+        // socket.off('changeCollection')
+        // socket.off('changeMaster')
+        // socket.off('ready')
+        // socket.off('gameStart')
+        socket.removeAllListeners('changeCollection')
+        socket.removeAllListeners('changeMaster')
+        socket.removeAllListeners('ready')
+        socket.removeAllListeners('gameStart')
 
         // Change Category
         socket.on('changeCollection', ({ collectionId }) => subRoomController.changeCollection(io, socket, collectionId))

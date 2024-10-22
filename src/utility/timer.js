@@ -1,5 +1,5 @@
-module.exports = (io,socket,roomId)=>{
-    let timeLeft = 90;
+module.exports = (io,timeLeft,roomId)=>{
+
     
     const timerInterval = setInterval(() => {
         if (timeLeft <= 0) {
@@ -9,6 +9,12 @@ module.exports = (io,socket,roomId)=>{
         }
         
         timeLeft--;
+        console.log(timeLeft)
         io.to(roomId).emit('timerUpdate', timeLeft); 
     }, 1000); 
+
+    return ()=>{
+        clearInterval(timerInterval);
+        console.log('timer stop')
+    };
 }

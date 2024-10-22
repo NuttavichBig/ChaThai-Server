@@ -6,6 +6,7 @@ const timer = require("../../utility/timer")
 
 module.exports = async (io, socket) => {
     try {
+        console.log('game start')
         // user verify
         const userInRoom = await gameService.checkUserInRoom(socket.user.id)
         if (!userInRoom) return createError(400, "You're not in room")
@@ -33,6 +34,10 @@ module.exports = async (io, socket) => {
         // emit to everyone
         io.to(room.id).emit('roomUpdated', room)
 
+        // clear listener
+        socket.removeAllListeners('score')
+        socket.removeAllListeners('endGame')
+
         // get Collection
         const collection = await prisma.collection.findUnique({
             where: {
@@ -50,43 +55,47 @@ module.exports = async (io, socket) => {
         // shuffle
         const words = arrayShuffle(collection.words)
 
-
+        console.log(words)
         // game start!!
         let totalScore = 0;
         let wordNumber = 0;
 
-        // timer start
-        timer(io, socket, room.id)
+        // timer start (and return clear timer function to stopTimer)
+        const stopTimer = timer(io, 90, room.id);
+
 
 
         // waiting for word changed event
         socket.on('score',(score)=>{
-            totalScore =+ score;
-            io.to(room.id).emit('getWord',words[wordNumber])
+            // console.log(score)
+            totalScore = totalScore+score;
+            if(wordNumber < words.length){
+                io.to(room.id).emit('getWord',words[wordNumber])
+            }else{
+                io.to(room.id).emit('getWord',0)
+            }
+            // console.log(totalScore)
             wordNumber++;
         })
         
         // emit summary score
-        socket.on('endGame',()=>{
-            prisma.room.update({
+        socket.on('endGame',async()=>{
+            stopTimer();
+            await prisma.room.update({
                 where : {
                     id : room.id
                 },data : {
-                    status : 'WAITING'
+                    status : 'HOLDING'
+                }
+            })
+            await prisma.inRoomPlayer.deleteMany({
+                where : {
+                    roomId : room.id
                 }
             })
             io.to(room.id).emit('summary',totalScore)
-            socket.on('rejoin',async()=>{
-                await prisma.inRoomPlayer.delete({
-                    where : {
-                        userId : socket.user.id
-                    }
-                })
-                socket.off('joinRoom')
-            })
+
         })
-
-
 
 
         console.log('end of game start controller')

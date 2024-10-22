@@ -49,9 +49,9 @@ io.use(socketAuthen)
 
 // Web socket
 io.on('connection',(socket)=>{
+    
     // Connection check
     console.log('User has connected')
-
     // Controller
     socket.on('joinRoom',(arg)=>roomController(io,socket,arg))
     // roomController(io,socket)

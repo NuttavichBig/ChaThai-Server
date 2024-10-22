@@ -7,9 +7,14 @@ module.exports = async(socket,next)=>{
     try{
         console.log('Authenticate Socket')
         // get token from socket
-        const  token = socket.handshake.headers.token
+        const  authorization = socket.handshake.headers.authorization
         // console.log(socket.handshake)
-        if(!token) return createError(401,"Token required")
+        if (!authorization || !authorization.startsWith('Bearer')) {
+            return createError(401, 'Unauthorized')
+        }
+        const token = authorization.split(' ')[1]
+        if(!token)return createError(401,'Unauthorized')
+
 
 
         // verify token

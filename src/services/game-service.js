@@ -22,7 +22,6 @@ module.exports.checkUserInRoom = async(userId)=>{
             }
         }
     })
-    console.log(result)
     return result
  }
 

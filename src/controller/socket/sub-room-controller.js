@@ -6,16 +6,24 @@ const gameService = require("../../services/game-service")
 module.exports.leaveRoom = async (io,userId, roomId) => {
     try {
         console.log('User has leave a room')
+
+        // check is exist if not return immediately
+        const isExist = await gameService.checkUserInRoom(userId)
+        if(!isExist)return
+
         // delete user from room
-        await prisma.inRoomPlayer.delete({
+        const delUser = await prisma.inRoomPlayer.delete({
             where: {
                 userId
             }
         })
 
+        // check game room status
+        const room = await gameService.checkGameRoomById(roomId)
+
         // if last user delete room
         const member = await gameService.findMember(roomId)
-        if (member.length === 0) {
+        if (member.length === 0 && room.status !== 'HOLDING') {
             console.log('no user left')
             const delRoom = await prisma.room.delete({
                 where: {
@@ -23,10 +31,28 @@ module.exports.leaveRoom = async (io,userId, roomId) => {
                 }
             })
             console.log(delRoom, "Delete this room completed")
-        } else {
+        } else if(delUser.isMaster){
+            const newMaster = await prisma.inRoomPlayer.update({
+                where : {
+                    userId : member[0].userId
+                },data :{
+                    isMaster : true,
+                    playerRole : 'GUESS'
+                },include :{
+                    users: {
+                        select : {
+                            id : true,
+                            username : true,
+                            displayName : true,
+                            profileImage : true
+                        }
+                    }
+                }
+            })
+            member.splice(0,1,newMaster)
             // if not the last emit to other player
-            io.to(roomId).emit('memberUpdated',member)
         }
+        io.to(roomId).emit('memberUpdated',member)
     } catch (err) {
         console.log("Disconnected's Error", err.message)
     }
@@ -75,7 +101,7 @@ module.exports.changeMaster = async (io, socket, newMasterId) => {
         if (userInRoom.rooms.status !== 'WAITING') return createError(400, "Can't update while room in this state")
 
         // check new master data
-        const newMaster = await checkUserInRoom(newMasterId)
+        const newMaster = await gameService.checkUserInRoom(newMasterId)
         if (!newMaster) return createError(400, "User is not in room")
 
         // updated
@@ -85,7 +111,7 @@ module.exports.changeMaster = async (io, socket, newMasterId) => {
                 userId: { not: newMasterId }
             }, data: {
                 isMaster: false,
-                playerRole: 'GUESS'
+                playerRole: 'HINT'
             }
         });
         await prisma.inRoomPlayer.update({
@@ -93,7 +119,7 @@ module.exports.changeMaster = async (io, socket, newMasterId) => {
                 id: newMaster.id
             }, data: {
                 isMaster: true,
-                playerRole: 'HINT'
+                playerRole: 'GUESS'
             }
         })
 
