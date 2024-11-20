@@ -1,7 +1,5 @@
 const Joi = require("joi")
 const createError = require('../utility/create-error')
-const { query } = require("express")
-
 
 //joi object
 
@@ -303,11 +301,23 @@ const updateUserSchema = Joi.object({
         .messages({
             'any.only': 'sortBy must be one of id, username, role, status, createdAt, updatedAt',
         }),
+    deleteImage: Joi
+        .boolean()
+        .optional()
+        .messages({
+            "boolean.base": "deleteImage must be boolean"
+        })
 })
 
 
 const createGameSchema = Joi.object({
-    
+    collectionId: Joi
+        .number()
+        .integer()
+        .required()
+        .messages({
+            'number.base': 'Limit must be integer',
+        }),
 })
 
 //validate function
@@ -340,3 +350,4 @@ module.exports.createCollectionValidator = validateSchema(createCollectionSchema
 module.exports.updateCollectionValidator = validateSchema(updateCollectionSchema)
 module.exports.getUserValidator = validateQuery(getUserQuerySchema)
 module.exports.updateUserValidator = validateSchema(updateUserSchema)
+module.exports.createGameValidator = validateSchema(createGameSchema)

@@ -1,6 +1,6 @@
 const prisma = require("../config/prisma")
 const createError = require("../utility/create-error")
-const bcrypt = require("jsonwebtoken")
+const bcrypt = require("bcryptjs")
 const fs = require("fs/promises")
 const cloudinary =require("../config/cloudinary")
 const getPublicId =require("../utility/getPublicId")
@@ -17,6 +17,17 @@ module.exports.getUser = async (req, res, next) => {
             },
             skip: (page - 1) * limit,
             take: limit,
+            select: {
+                id : true,
+                username : true,
+                displayName : true,
+                email : true,
+                status : true,
+                createdAt : true,
+                profileImage : true,
+                role : true
+
+            },
         }
 
         // Check for search
@@ -36,13 +47,13 @@ module.exports.getUser = async (req, res, next) => {
                             }
                         },
                     ]
-                }, ...condition
+                },...condition
             }
         }
 
         // prisma
         const result = await prisma.user.findMany(condition)
-
+        console.log(result)
         // response
         res.json(result)
     } catch (err) {
@@ -54,7 +65,8 @@ module.exports.getUser = async (req, res, next) => {
 module.exports.updateUser = async (req, res, next) => {
     try {
         // obj deconstruction
-        const {email , password , status} =req.input
+        const {email , password , status,deleteImage} =req.input
+        console.log(req.input)
         const haveFile = !!req.file
         const {id} = req.params
 
@@ -72,18 +84,24 @@ module.exports.updateUser = async (req, res, next) => {
         // make data
         let data = {...req.input}
 
-        // file handle
-        let uploadResult = {}
-        if(haveFile){
-            uploadResult = await cloudinary.uploader.upload(req.file.path,{
-                public_id : req.file.filename.split(".")[0]
-            })
-            fs.unlink(req.file.path)
-            if(user.profileImage){
+               // handle delete cover image
+               if (deleteImage) {
                 cloudinary.uploader.destroy(getPublicId(user.profileImage))
+                data.profileImage = null
             }
-            data = {...data,profileImage : uploadResult}
-        }
+    
+    
+            // file handle
+            if (haveFile) {
+                const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+                    public_id: req.file.filename.split(".")[0]
+                })
+                fs.unlink(req.file.path)
+                data = { ...data, profileImage: uploadResult.secure_url }
+                if (user.profileImage) {
+                    cloudinary.uploader.destroy(getPublicId(user.profileImage))
+                }
+            }
 
         // hash password
         if(password){
@@ -93,10 +111,21 @@ module.exports.updateUser = async (req, res, next) => {
 
         // update then response
         const result = await prisma.user.update({
-            where :{ id : +id},data
+            where :{ id : +id},data, select: {
+                id : true,
+                username : true,
+                displayName : true,
+                email : true,
+                status : true,
+                createdAt : true,
+                role : true,
+                profileImage : true
+
+            },
         })
         res.json(result)
     } catch (err) {
+        console.log(err)
         next(err);
     }
 

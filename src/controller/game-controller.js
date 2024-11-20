@@ -13,7 +13,7 @@ module.exports.createGame = async(req,res,next)=>{
         const {collectionId} = req.body
         
         // find collection service
-        await findCollectionById(collectionId)
+        await findCollectionById(+collectionId)
 
 
         // Check is user already in room?

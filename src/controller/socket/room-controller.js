@@ -18,8 +18,21 @@ module.exports = async (io, socket, arg) => {
             // socket.emit("error", "Room not found")
             return createError(400,"Room not found")
         }
-
+         
+        // check is room available
         if (room.status === 'PLAYING') return createError(409, "Game room is full or now playing")
+
+        // check is room has select collection
+        if(!room.collectionId){
+                const defaultCollection = await prisma.collection.findFirst()
+                await prisma.room.update({
+                    where : {
+                        id : room.id
+                    },data :{
+                        collectionId : defaultCollection.id
+                    }
+                })
+            }
 
         // find member of this room
         const member = await gameService.findMember(room.id)
@@ -30,14 +43,14 @@ module.exports = async (io, socket, arg) => {
         if(member.length === 0){
             isMaster = true;
             playerRole = 'GUESS'
-            const data = await prisma.room.update({
-                where : {
-                    id : room.id
-                },data : {
-                    status : 'WAITING'
-                }
-            })
-            console.log('change room status to waiting',data)
+            // const data = await prisma.room.update({
+            //     where : {
+            //         id : room.id
+            //     },data : {
+            //         status : 'WAITING'
+            //     }
+            // })
+            // console.log('change room status to waiting',data)
         }
 
 

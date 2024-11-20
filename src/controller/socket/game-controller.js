@@ -66,42 +66,51 @@ module.exports = async (io, socket) => {
 
 
         // waiting for word changed event
-        socket.on('score',(score)=>{
+        socket.on('score', (score) => {
+            console.log('from',socket.id,'word No.',wordNumber)
             // console.log(score)
-            totalScore = totalScore+score;
-            if(wordNumber < words.length){
-                io.to(room.id).emit('getWord',words[wordNumber])
-            }else{
-                io.to(room.id).emit('getWord',0)
+            totalScore = totalScore + score;
+            if (wordNumber < words.length) {
+                io.to(room.id).emit('getWord', words[wordNumber])
+            } else {
+                io.to(room.id).emit('getWord', 0)
             }
             // console.log(totalScore)
             wordNumber++;
         })
-        
+
         // emit summary score
-        socket.on('endGame',async()=>{
+        socket.on('endGame', async () => {
+            io.to(room.id).emit('summary', totalScore)
+            console.log('summary emitted')
             stopTimer();
-            await prisma.room.update({
-                where : {
-                    id : room.id
-                },data : {
-                    status : 'HOLDING'
+            const resetRoom = await prisma.room.update({
+                where: {
+                    id: room.id
+                }, data: {
+                    status: 'WAITING'
                 }
             })
-            await prisma.inRoomPlayer.deleteMany({
-                where : {
-                    roomId : room.id
+            await prisma.inRoomPlayer.updateMany({
+                where: {
+                    roomId: room.id
+                }, data: {
+                    isReady: false
                 }
             })
-            io.to(room.id).emit('summary',totalScore)
+            const updateAllMember = await gameService.findMember(room.id)
+            io.to(room.id).emit('roomUpdated', resetRoom)
+            io.to(room.id).emit('memberUpdated', updateAllMember)
 
         })
 
 
         console.log('end of game start controller')
 
-
-
+        socket.on('disconnect', () => {
+            
+            stopTimer()
+        })
     } catch (err) {
         console.log(err.message)
         socket.emit("error", err.message)

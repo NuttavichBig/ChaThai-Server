@@ -4,6 +4,7 @@ const cloudinary = require("../config/cloudinary")
 const fs = require("fs/promises")
 const getPublicId = require("../utility/getPublicId")
 const findCollectionById = require("../services/findCollectionById")
+const { update } = require("./auth-controller")
 
 
 
@@ -28,7 +29,8 @@ module.exports.getCollection = async (req, res, next) => {
                 id: true,
                 title: true,
                 coverImage: true,
-                authorId: true
+                authorId: true,
+                updatedAt : true
             }
         }
         if (author) {
@@ -150,8 +152,7 @@ module.exports.updateCollection = async (req, res, next) => {
         const havefile = !!req.file
 
         // collection service
-        const collection = await findCollectionById(id)
-
+        const collection = await findCollectionById(+id)
 
         // Check user permission
         if (req.user.role !== 'ADMIN') {
@@ -236,7 +237,7 @@ module.exports.deleteCollection = async (req, res, next) => {
         const user = req.user
 
         // collection service
-        const collection = await findCollectionById(id)
+        const collection = await findCollectionById(+id)
 
         // Check user permission
         if (user.role !== 'ADMIN') {

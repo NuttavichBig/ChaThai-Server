@@ -3,7 +3,7 @@ const createError = require('../utility/create-error')
 
 module.exports = async(collectionId)=>{
     // validate collectionId
-    if(!collectionId)return createError(400,"Collection ID is require")
+    if(!collectionId)return createError(400,"Collection ID does not provided or invalid")
     if(isNaN(collectionId) || Math.trunc(collectionId) !== collectionId)return createError(400,"Collection ID must be integer")
 
 
