@@ -107,9 +107,33 @@ module.exports = async (io, socket) => {
 
         console.log('end of game start controller')
 
-        socket.on('disconnect', () => {
+        socket.on('disconnect', async() => {
             
             stopTimer()
+
+            //find user
+            const user = await prisma.inRoomPlayer.findFirst({
+                where: {
+                    userId : +socket.user.id
+                }
+            })
+            if(user.isMaster){
+                const resetRoom = await prisma.room.update({
+                    where: {
+                        id: room.id
+                    }, data: {
+                        status: 'WAITING'
+                    }
+                })
+                await prisma.inRoomPlayer.updateMany({
+                    where: {
+                        roomId: room.id
+                    }, data: {
+                        isReady: false
+                    }
+                })
+                io.to(room.id).emit('roomUpdated', resetRoom)
+            }
         })
     } catch (err) {
         console.log(err.message)
